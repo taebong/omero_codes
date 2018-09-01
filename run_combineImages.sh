@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH -c 1
 #SBATCH -N 1
-#SBATCH -t 0-12:00
-#SBATCH -p short
+#SBATCH -t 2-00:00
+#SBATCH -p medium
 #SBATCH --mem=2000
 #SBATCH -o log/combine_%j.out
 #SBATCH -e log/combine_%j.err
