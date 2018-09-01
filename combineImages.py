@@ -40,7 +40,7 @@ time_regexes = {
 ################ to be changed depending on data
 input_dataset_id = 4514  #Dataset ID where individual images are
 output_dataset_id = 4516  #Dataset ID where combined images will be stored
-session_id = '1150aaf9-9275-4677-bcce-9f57fcbbaa12'    #session id
+session_id = '56dd9cb2-513b-4749-88bd-ad927f4f42b6'    #session id
 filter_pattern = 'Well\w{3}_Field\d{1}'
 
 parameter_map = {}
@@ -373,7 +373,15 @@ def func(filter_name,services=services,parameter_map=parameter_map,
     make_single_image(services,parameter_map,image_ids,output_dataset,colour_map)
     
 if __name__ == "__main__":
-    filter_names = np.unique([re.search(filter_pattern,x).group(0) for x in image_names])    
+    filter_names = np.array([])
+    for image_name in image_names:
+        try:
+            filter_name = re.search(filter_pattern,image_name).group(0)
+            filter_names = np.append(filter_names,filter_name)
+        except:
+            continue
+    filter_names = np.unique(filter_names)
+    #filter_names = np.unique([re.search(filter_pattern,x).group(0) for x in image_names])    
     for name in filter_names:
         func(name)
 
