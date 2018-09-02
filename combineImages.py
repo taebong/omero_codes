@@ -38,22 +38,17 @@ time_regexes = {
 
 
 ################ to be changed depending on data
-<<<<<<< HEAD
-input_dataset_id = 4555  #Dataset ID where individual images are
-output_dataset_id = 4557  #Dataset ID where combined images will be stored
-session_id = '8383bb8e-3e54-459f-b9eb-1614487de6a0'    #session id
-=======
 input_dataset_id = 4514  #Dataset ID where individual images are
 output_dataset_id = 4516  #Dataset ID where combined images will be stored
-session_id = '56dd9cb2-513b-4749-88bd-ad927f4f42b6'    #session id
->>>>>>> 95020b1fd78fcd58d1beb400d91ad8b193654787
+session_id = '8383bb8e-3e54-459f-b9eb-1614487de6a0'    #session id
 filter_pattern = 'Well\w{3}_Field\d{1}'
 
 parameter_map = {}
-parameter_map["Channel_Name_Pattern"] = 'Channel'
+parameter_map["Channel_Name_Pattern"] = 'None'
 parameter_map["Time_Name_Pattern"] = 'Time'
 parameter_map["Z_Name_Pattern"] = 'None'
-parameter_map["Channel_Colours"]=['Green','White']
+parameter_map["Channel_Colours"]=['Green']
+parameter_map["Filter_Names"]=filter_names
 ##################
 
 client = omero.client("omero.hms.harvard.edu")
@@ -68,6 +63,9 @@ images = list(input_dataset.listChildren())
 images.sort(key=lambda x: x.name.lower())
 image_ids = [x.getId() for x in images]
 image_names = [x.name for x in images]
+
+if parameter_map["Channel_Name_Pattern"] == 'None':
+    parameter_map["Channel_Names"] = [ch.getLabel() for ch in images[0].getChannels()]
 
 colour_map = {}
 if "Channel_Colours" in parameter_map:
@@ -135,7 +133,7 @@ def pick_pixel_sizes(pixel_sizes):
                 return None
     return pix_size
 
-def assign_images_by_regex(parameter_map, image_ids, query_service, source_z,
+def assign_images_by_regex(parameter_map, image_ids, query_service, source_z, source_c, source_t,
                            id_name_map=None):
 
     c = None
@@ -155,12 +153,17 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z,
 
     # other parameters we need to determine
     size_z = source_z
-    size_t = 1
+    size_c = source_c
+    size_t = source_t
     z_start = None      # could be 0 or 1 ?
     t_start = None
 
     image_map = {}  # map of (z,c,t) : imageId
-    channels = []
+    
+    if 'Channel_Names' in parameter_map:
+        channels = parameter_map['Channel_Names']
+    else:
+        channels = []
 
     if id_name_map is None:
         id_name_map = get_image_names(query_service, image_ids)
@@ -168,38 +171,35 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z,
     # assign each (imageId,zPlane) to combined image (z,c,t) by name.
     for iid in image_ids:
         name = id_name_map[iid]
-        if t:
-            t_search = t.search(name)
-        if c:
-            c_search = c.search(name)
 
-        if t is None or t_search is None:
-            the_t = 0
-        else:
-            the_t = int(t_search.group('T'))
+        if source_t == 1:
+            if t:
+                t_search = t.search(name)
+            if t is None or t_search is None:
+                the_t = 0
+            else:
+                the_t = int(t_search.group('T'))
 
-        if c is None or c_search is None:
-            c_name = "0"
-        else:
-            c_name = c_search.group('C')
-        if c_name in channels:
-            the_c = channels.index(c_name)
-        else:
-            the_c = len(channels)
-            channels.append(c_name)
+            size_t = max(size_t, the_t+1)
+            if t_start is None:
+                t_start = the_t
+            else:
+                t_start = min(t_start, the_t)
+        
+        if source_c == 1:
+            if c:
+                c_search = c.search(name)
+            if c is None or c_search is None:
+                c_name = "0"
+            else:
+                c_name = c_search.group('C')
+            if c_name in channels:
+                the_c = channels.index(c_name)
+            else:
+                the_c = len(channels)
+                channels.append(c_name)
 
-        size_t = max(size_t, the_t+1)
-        if t_start is None:
-            t_start = the_t
-        else:
-            t_start = min(t_start, the_t)
-
-        # we have T and C now. Need to check if source images are Z stacks
-        if source_z > 1:
-            z_start = 0
-            for src_z in range(source_z):
-                image_map[(src_z, the_c, the_t)] = (iid, src_z)
-        else:
+        if source_z == 1:
             if z:
                 z_search = z.search(name)
 
@@ -214,9 +214,27 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z,
             else:
                 z_start = min(z_start, the_z)
 
-            # every plane comes from z=0
-            image_map[(the_z, the_c, the_t)] = (iid, 0)
-
+        for src_z in range(source_z):
+            if source_z > 1:
+                z_start = 0
+                to_z = src_z
+            else:
+                to_z = the_z
+            
+            for src_c in range(source_c):
+                if source_c > 1:
+                    to_c = src_c
+                else:
+                    to_c = the_c
+                
+                for src_t in range(source_t):
+                    if source_t > 1:
+                        to_t = src_t
+                    else:
+                        to_t = the_t
+                    
+                    image_map[(to_z, the_c, to_t)] = (iid, to_z, to_c, to_t)
+ 
     # if indexes were 1-based (or higher), need to shift indexes accordingly.
     if t_start > 0 or z_start > 0:
         size_t = size_t-t_start
@@ -231,6 +249,7 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z,
     c_names = {}
     for c, name in enumerate(channels):
         c_names[c] = name
+
     return (size_z, c_names, size_t, i_map)
 
 
@@ -274,17 +293,18 @@ def make_single_image(services, parameter_map, image_ids, dataset, colour_map):
     size_y = pixels.getSizeY().getValue()
     # if we have a Z stack, use this in new image (don't combine Z)
     source_z = pixels.getSizeZ().getValue()
+    # if we have multiple channels in source images, use this in new image (don't combine channel)
+    source_c = pixels.getSizeC().getValue()
+    # if source image is time lapse, use this in new image (don't combine time)
+    source_t = pixels.getSizeT().getValue()
 
     # Now we need to find where our planes are coming from.
     # imageMap is a map of destination:source, defined as (newX, newY,
     # newZ):(imageId, z)
     size_z, c_names, size_t, image_map = assign_images_by_regex(
-        parameter_map, image_ids, query_service, source_z, id_name_map)
-    size_c = len(c_names)
+        parameter_map, image_ids, query_service, source_z, source_c, source_t, id_name_map)
 
-    if "Channel_Names" in parameter_map:
-        for c, name in enumerate(parameter_map["Channel_Names"]):
-            c_names[c] = name
+    size_c = len(c_names)
 
     if "Filter_Names" in parameter_map:
         filter_string = parameter_map["Filter_Names"]
@@ -310,27 +330,30 @@ def make_single_image(services, parameter_map, image_ids, dataset, colour_map):
         for the_z in range(size_z):
             for the_t in range(size_t):
                 if (the_z, the_c, the_t) in image_map:
-                    image_id, plane_z = image_map[(the_z, the_c, the_t)]
+                    image_id, plane_z, plane_c, plane_t = image_map[(the_z, the_c, the_t)]
                     query_string = "select p from Pixels p join fetch "                        "p.image i join fetch p.pixelsType pt where "                        "i.id='%d'" % image_id
                     pixels = query_service.findByQuery(query_string,
                                                        None)
                     plane_2d = get_plane(raw_pixel_store, pixels, plane_z,
-                                         0, 0)
+                                         plane_c, plane_t)
                     # Note pixels sizes (may be None)
                     pixel_sizes['x'].append(pixels.getPhysicalSizeX())
                     pixel_sizes['y'].append(pixels.getPhysicalSizeY())
                 else:
                     plane_2d = zeros((size_y, size_x))
+                
                 script_utils.upload_plane_by_row(
                     raw_pixel_store_upload, plane_2d, the_z, the_c, the_t)
                 min_value = min(min_value, plane_2d.min())
                 max_value = max(max_value, plane_2d.max())
+        
         pixels_service.setChannelGlobalMinMax(pixels_id, the_c,
                                               float(min_value),
                                               float(max_value))
         rgba = COLOURS["White"]
         if the_c in colour_map:
             rgba = colour_map[the_c]
+        
         script_utils.reset_rendering_settings(rendering_engine, pixels_id,
                                               the_c, min_value, max_value,
                                               rgba)
@@ -339,6 +362,7 @@ def make_single_image(services, parameter_map, image_ids, dataset, colour_map):
     pixels = rendering_engine.getPixels()
     # has channels loaded - (getting Pixels from image doesn't)
     i = 0
+
     for c in pixels.iterateChannels():
         # c is an instance of omero.model.ChannelI
         if i >= len(c_names):
@@ -375,7 +399,6 @@ def make_single_image(services, parameter_map, image_ids, dataset, colour_map):
 
 def func(filter_name,services=services,parameter_map=parameter_map,
          image_ids=image_ids,output_dataset=output_dataset,colour_map=colour_map):
-    parameter_map["Filter_Names"]=filter_name
     make_single_image(services,parameter_map,image_ids,output_dataset,colour_map)
     
 if __name__ == "__main__":
