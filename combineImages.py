@@ -48,7 +48,6 @@ parameter_map["Channel_Name_Pattern"] = 'None'
 parameter_map["Time_Name_Pattern"] = 'Time'
 parameter_map["Z_Name_Pattern"] = 'None'
 parameter_map["Channel_Colours"]=['Green']
-parameter_map["Filter_Names"]=filter_names
 ##################
 
 client = omero.client("omero.hms.harvard.edu")
@@ -399,6 +398,7 @@ def make_single_image(services, parameter_map, image_ids, dataset, colour_map):
 
 def func(filter_name,services=services,parameter_map=parameter_map,
          image_ids=image_ids,output_dataset=output_dataset,colour_map=colour_map):
+    parameter_map["Filter_Names"]=filter_name
     make_single_image(services,parameter_map,image_ids,output_dataset,colour_map)
     
 if __name__ == "__main__":
