@@ -38,16 +38,16 @@ time_regexes = {
 
 
 ################ to be changed depending on data
-input_dataset_id = 4514  #Dataset ID where individual images are
-output_dataset_id = 4516  #Dataset ID where combined images will be stored
-session_id = 'd21d9940-ccc9-4d0b-853b-de8192e6f579'    #session id
+input_dataset_id = 4555  #Dataset ID where individual images are
+output_dataset_id = 4557  #Dataset ID where combined images will be stored
+session_id = '19b461ad-02fb-4677-b86f-486948d268d9'    #session id
 filter_pattern = 'Well\w{3}_Field\d{1}'
 
 parameter_map = {}
 parameter_map["Channel_Name_Pattern"] = 'None'
 parameter_map["Time_Name_Pattern"] = 'Time'
 parameter_map["Z_Name_Pattern"] = 'None'
-parameter_map["Channel_Colours"]=['Green']
+parameter_map["Channel_Colours"]=['Green','White']
 ##################
 
 client = omero.client("omero.hms.harvard.edu")
@@ -308,8 +308,6 @@ def make_single_image(services, parameter_map, image_ids, dataset, colour_map):
         parameter_map, image_ids, query_service, source_z, source_c, source_t, id_name_map)
 
     size_c = len(c_names)
-
-    print size_z, size_c, size_t, source_z, source_c, source_t
 
     if "Channel_Names" in parameter_map:
         for c, name in enumerate(parameter_map["Channel_Names"]):
