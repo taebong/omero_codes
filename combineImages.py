@@ -40,7 +40,7 @@ time_regexes = {
 ################ to be changed depending on data
 input_dataset_id = 4514  #Dataset ID where individual images are
 output_dataset_id = 4516  #Dataset ID where combined images will be stored
-session_id = '8383bb8e-3e54-459f-b9eb-1614487de6a0'    #session id
+session_id = 'd21d9940-ccc9-4d0b-853b-de8192e6f579'    #session id
 filter_pattern = 'Well\w{3}_Field\d{1}'
 
 parameter_map = {}
@@ -139,7 +139,7 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z, so
     regex_channel = channel_regexes[parameter_map["Channel_Name_Pattern"]]
     if regex_channel:
         c = re.compile(regex_channel)
-
+    
     t = None
     regex_t = time_regexes[parameter_map["Time_Name_Pattern"]]
     if regex_t:
@@ -159,10 +159,7 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z, so
 
     image_map = {}  # map of (z,c,t) : imageId
     
-    if 'Channel_Names' in parameter_map:
-        channels = parameter_map['Channel_Names']
-    else:
-        channels = []
+    channels = []
 
     if id_name_map is None:
         id_name_map = get_image_names(query_service, image_ids)
@@ -184,6 +181,9 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z, so
                 t_start = the_t
             else:
                 t_start = min(t_start, the_t)
+        else:
+            t_start = 0
+            size_t = source_t
         
         if source_c == 1:
             if c:
@@ -197,6 +197,8 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z, so
             else:
                 the_c = len(channels)
                 channels.append(c_name)
+        else:
+            channels = parameter_map['Channel_Names']
 
         if source_z == 1:
             if z:
@@ -212,10 +214,12 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z, so
                 z_start = the_z
             else:
                 z_start = min(z_start, the_z)
+        else:
+            z_start = 0
+            size_z = source_z
 
         for src_z in range(source_z):
             if source_z > 1:
-                z_start = 0
                 to_z = src_z
             else:
                 to_z = the_z
@@ -232,7 +236,7 @@ def assign_images_by_regex(parameter_map, image_ids, query_service, source_z, so
                     else:
                         to_t = the_t
                     
-                    image_map[(to_z, the_c, to_t)] = (iid, to_z, to_c, to_t)
+                    image_map[(to_z, to_c, to_t)] = (iid, src_z, src_c, src_t)
  
     # if indexes were 1-based (or higher), need to shift indexes accordingly.
     if t_start > 0 or z_start > 0:
@@ -304,6 +308,12 @@ def make_single_image(services, parameter_map, image_ids, dataset, colour_map):
         parameter_map, image_ids, query_service, source_z, source_c, source_t, id_name_map)
 
     size_c = len(c_names)
+
+    print size_z, size_c, size_t, source_z, source_c, source_t
+
+    if "Channel_Names" in parameter_map:
+        for c, name in enumerate(parameter_map["Channel_Names"]):
+            c_names[c] = name
 
     if "Filter_Names" in parameter_map:
         filter_string = parameter_map["Filter_Names"]
