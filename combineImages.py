@@ -63,6 +63,9 @@ images.sort(key=lambda x: x.name.lower())
 image_ids = [x.getId() for x in images]
 image_names = [x.name for x in images]
 
+images_output = list(output_dataset.listChildren())
+images_names_output = [x.name for x in images_output]
+
 if parameter_map["Channel_Name_Pattern"] == 'None':
     parameter_map["Channel_Names"] = [ch.getLabel() for ch in images[0].getChannels()]
 
@@ -418,8 +421,14 @@ if __name__ == "__main__":
         except:
             continue
     filter_names = np.unique(filter_names)
-    #filter_names = np.unique([re.search(filter_pattern,x).group(0) for x in image_names])    
+    #filter_names = np.unique([re.search(filter_pattern,x).group(0) for x in image_names])   
+
+    # Filter names will be used as the names of the combined images. 
+    # Don't combine if a filter name is already used as an image name in the output dataset
     for name in filter_names:
+        if name in images_names_output:
+            continue
+
         func(name)
 
  
