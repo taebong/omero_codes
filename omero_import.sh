@@ -10,4 +10,5 @@
 #SBATCH --mail-user=taeyeon_yoo@hms.harvard.edu
 
 module load omero
-omero import -- --exclude=clientpath --checksum-algorithm=CRC-32 ../TaxolMicronucleation/20180829/27hour -d 4556
+omero import -- --exclude=clientpath --checksum-algorithm=CRC-32 ../TaxolMicronucleation/20180907 -d 4702
+

@@ -14,16 +14,16 @@ from omero.rtypes import rint, rlong, rstring, robject, unwrap
 
 
 ################ to be changed depending on data
-channel_regex = r'_Channel(?P<Channel>.+?)_'
+channel_regex = r'_w\d(?P<Channel>.+?).TIF'
 z_regex = False
-time_regex = r'Time(?P<Time>\d+?)_'
-field_regex = r'\(series (?P<Field>\d+?)\)'
-well_regex = r'Well(?P<Well>\w+?)_'
+time_regex = r'_t(?P<Time>\d+?)_'
+field_regex = r'_Scan_(?P<Field>\w+?)_'
+well_regex = r'Well_(?P<Well>\w+?)_'
 
-chan_change = {'Fluo Green':'488nm'}
+chan_change = {'Fluo Green':'488nm','Fluo Red':'560nm','Brightfield':'Brightfield'}
 
-input_dataset_id = 4556 #Dataset ID where individual images are
-session_id = '8383bb8e-3e54-459f-b9eb-1614487de6a0'    #session id
+input_dataset_id = 4702 #Dataset ID where individual images are
+session_id = 'ec4720e6-1e54-44c5-9490-b5804c1f772f'    #session id
 ##################
 
 regexes = {'Well':well_regex,'Field':field_regex,'Channel':channel_regex,'Z':z_regex,'Time':time_regex}

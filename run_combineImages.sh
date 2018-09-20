@@ -3,7 +3,7 @@
 #SBATCH -N 1
 #SBATCH -t 2-00:00
 #SBATCH -p medium
-#SBATCH --mem=2000
+#SBATCH --mem=4000
 #SBATCH -o log/combine_%j.out
 #SBATCH -e log/combine_%j.err
 #SBATCH --mail-type=ALL

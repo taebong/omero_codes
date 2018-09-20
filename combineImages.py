@@ -38,16 +38,16 @@ time_regexes = {
 
 
 ################ to be changed depending on data
-input_dataset_id = 4555  #Dataset ID where individual images are
-output_dataset_id = 4557  #Dataset ID where combined images will be stored
-session_id = '19b461ad-02fb-4677-b86f-486948d268d9'    #session id
-filter_pattern = 'Well\w{3}_Field\d{1}'
+input_dataset_id = 4702  #Dataset ID where individual images are
+output_dataset_id = 4853  #Dataset ID where combined images will be stored
+session_id = '4b2c3d7c-962e-414a-abf2-af21d109183f'    #session id
+filter_pattern = 'Well\w{3}_Field\w{2}'
 
 parameter_map = {}
 parameter_map["Channel_Name_Pattern"] = 'None'
 parameter_map["Time_Name_Pattern"] = 'Time'
 parameter_map["Z_Name_Pattern"] = 'None'
-parameter_map["Channel_Colours"]=['Green','White']
+parameter_map["Channel_Colours"]=['Green','Red','White']
 ##################
 
 client = omero.client("omero.hms.harvard.edu")
